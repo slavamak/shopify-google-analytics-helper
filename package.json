@@ -1,0 +1,52 @@
+{
+  "name": "shopify-google-analytics-helper",
+  "version": "0.0.0",
+  "description": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/slavamak/shopify-google-analytics-helper.git"
+  },
+  "homepage": "https://github.com/slavamak/shopify-google-analytics-helper#readme",
+  "author": "Slava Maksimov <hello@slavamak.com> (https://slavamak.com)",
+  "main": "dist/bundle.js",
+  "module": "dist/bundle.es.js",
+  "scripts": {
+    "build": "microbundle build",
+    "prerelease": "npm run build",
+    "release": "np",
+    "test": "echo \"run tests\"",
+    "watch": "microbundle watch"
+  },
+  "lint-staged": {
+    "*.js": "prettier --write"
+  },
+  "browserslist": {
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ],
+    "production": [
+      "last 2 version",
+      "firefox >= 51",
+      "chrome >= 56",
+      "edge >= 15",
+      "safari >= 9"
+    ]
+  },
+  "source": "src/index.js",
+  "unpkg": "dist/bundle.umd.js",
+  "devDependencies": {
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-simple-import-sort": "^7.0.0",
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.3",
+    "microbundle": "^0.15.0",
+    "np": "^7.6.2",
+    "prettier": "^2.7.1"
+  }
+}
