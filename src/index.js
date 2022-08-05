@@ -8,7 +8,7 @@ export default function ShopifyGAHelper({
   debug = false,
 }) {
   const queryStorefrontApi = async (payload) => {
-    const response = await fetch(`https://${storeUrl}/api/2021-10/graphql`, {
+    const response = await fetch(`https://${storeUrl}/api/2022-07/graphql`, {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -21,15 +21,18 @@ export default function ShopifyGAHelper({
     const { data, errors } = await response.json()
 
     if (errors) {
-      throw new Error(errors, payload)
+      const error = new Error(JSON.stringify(errors))
+      error.metadata = payload
+
+      throw error
     }
 
     return data
   }
 
-  const pushEvent = (name, payload) => {
+  const pushDataLayerEvent = (gtmEvent, payload) => {
     if (debug) {
-      console.log(`'${name}'`, payload)
+      console.log(`'${gtmEvent}'`, payload)
     }
 
     if (!window.dataLayer) {
@@ -45,19 +48,19 @@ export default function ShopifyGAHelper({
 
     // Add new event
     return window.dataLayer.push({
-      event: name,
+      event: gtmEvent,
       ...payload,
     })
   }
 
   const fetchVariant = async (variantId) => {
     if (!variantId) {
-      return false
+      return undefined
     }
 
     const result = await queryStorefrontApi({
       variables: {
-        id: btoa(`gid://shopify/ProductVariant/${variantId}`),
+        id: window.btoa(`gid://shopify/ProductVariant/${variantId}`),
       },
       query: fetchVariantQuery,
     })
@@ -66,7 +69,7 @@ export default function ShopifyGAHelper({
   }
 
   /**
-   * Make flat object from a variant with nested product data
+   * Make flat object from a variant with nested product data.
    */
   const makeFlatVariant = (variant) => {
     const { product } = variant
@@ -75,14 +78,12 @@ export default function ShopifyGAHelper({
     const variantId = getShopifyId(variant.id)
 
     return {
-      // Product level info
       productId: getShopifyId(product.id),
       productTitle: product.title,
       productVariantTitle: `${product.title} - ${variant.title}`,
-      productType: product.productType || product.type,
+      productType: product.productType,
       productVendor: product.vendor,
       productUrl,
-      // Variant level data
       sku: variant.sku,
       price: variant.price,
       compareAtPrice: variant.compareAtPrice,
@@ -116,74 +117,95 @@ export default function ShopifyGAHelper({
     price: flatVariant.price,
   })
 
-  const viewItem = async (variantPayload, { el, list, position } = {}) => {
-    const flatVariant = await getFlatVariant(variantPayload)
-    const index = position || getElementPosition(el)
+  const viewOrSelectItem =
+    (gtmEvent) =>
+    async (variantPayload, { el, list, position } = {}) => {
+      const flatVariant = await getFlatVariant(variantPayload)
+      const index = position || getElementPosition(el)
 
-    if (!flatVariant) {
-      return null
+      if (!flatVariant) {
+        return null
+      }
+
+      const item = {
+        ...makeGaProductFieldObject(flatVariant),
+        index,
+      }
+
+      if (list) {
+        item.item_list_name = list
+      }
+
+      return pushDataLayerEvent(gtmEvent, {
+        ecommerce: {
+          items: [item],
+        },
+      })
     }
 
-    const item = {
-      ...makeGaProductFieldObject(flatVariant),
-      index,
-    }
+  const viewItem = (variantPayload, { el, list, position } = {}) => {
+    const pushEvent = viewOrSelectItem("view_item")
 
-    if (list) {
-      item.item_list_name = list
-    }
+    return pushEvent(variantPayload, { el, list, position })
+  }
 
-    return pushEvent("view_item", {
-      ecommerce: {
-        items: [item],
-      },
-    })
+  const selectItem = (variantPayload, { el, list, position } = {}) => {
+    const pushEvent = viewOrSelectItem("select_item")
+
+    return pushEvent(variantPayload, { el, list, position })
   }
 
   const viewCart = async (checkoutOrCartPayload) => {
     if (checkoutOrCartPayload) {
-      return pushEvent("view_cart", {
+      return pushDataLayerEvent("view_cart", {
         ecommerce: {
           ...checkoutOrCartPayload,
         },
       })
     }
 
-    return null
+    return undefined
   }
 
   const checkoutOrCart = (gtmEvent) => (checkoutOrCartPayload) => {
     if (checkoutOrCartPayload) {
-      return pushEvent(gtmEvent, {
+      return pushDataLayerEvent(gtmEvent, {
         ecommerce: {
           ...checkoutOrCartPayload,
         },
       })
     }
 
-    return null
+    return undefined
   }
 
   const beginCheckout = (checkoutOrCartPayload) => {
-    const fn = checkoutOrCart("begin_checkout")
+    const pushEvent = checkoutOrCart("begin_checkout")
 
-    return fn(checkoutOrCartPayload)
+    return pushEvent(checkoutOrCartPayload)
   }
 
   const purchase = (checkoutOrCartPayload) => {
-    const fn = checkoutOrCart("purchase")
+    const pushEvent = checkoutOrCart("purchase")
 
-    return fn(checkoutOrCartPayload)
+    return pushEvent(checkoutOrCartPayload)
   }
 
+  /**
+   * Sends event of changes in the quantity of items in the cart.
+   * @param {(Object.<string, (string|number)>|number|string)} variantPayload
+   * @param {(number|string)} quantity
+   * @param {string} gtmEvent
+   * @returns
+   */
   const updateQuantity = async (variantPayload, quantity, gtmEvent) => {
     const flatVariant = await getFlatVariant(variantPayload)
 
     if (!flatVariant) {
-      return null
+      return undefined
     }
 
-    return pushEvent(gtmEvent, {
+    return pushDataLayerEvent(gtmEvent, {
       ecommerce: {
         items: [
           {
@@ -197,20 +219,21 @@ export default function ShopifyGAHelper({
 
   /**
    * Used whenever there is a positive change in the quantity of a product in
-   * the cart.
+   * the cart or add new product to cart.
    */
   const addToCart = (variantPayload, quantity) =>
     updateQuantity(variantPayload, quantity, "add_to_cart")
 
   /**
    * Used whenever there is a negative change in the quantity of a product in
-   * the cart.
+   * the cart or remove product from cart.
    */
   const removeFromCart = (variantPayload, quantity) =>
     updateQuantity(variantPayload, quantity, "remove_from_cart")
 
   return {
     viewItem,
+    selectItem,
     addToCart,
     removeFromCart,
     viewCart,

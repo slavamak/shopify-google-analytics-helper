@@ -1,8 +1,21 @@
 /**
- * Get the id from a Shopify gid:// style id.  This strips everything but the
- * last part of the string.  So gid://shopify/ProductVariant/34641879105581
- * becomes 34641879105581
- * https://regex101.com/r/3FIplL/1
+ * Get the identifier from the Shopify style identifier gid:// .
+ * This removes everything but the last part of the string.
+ *
+ * @example
+ * getShopifyId(34641879105581);
+ * // returns 34641879105581
+ *
+ * @example
+ * getShopifyId("Z2lkOi8vc2hvcGlmeS9Qcm9kdWN0VmFyaWFudC8zNDY0MTg3OTEwNTU4MQ==");
+ * // returns "34641879105581"
+ *
+ * @example
+ * getShopifyId("gid://shopify/ProductVariant/34641879105581");
+ * // returns "34641879105581"
+ *
+ * @param {(string|number)} id
+ * @returns {(number|string|undefined)}
  */
 export const getShopifyId = (id) => {
   let shopifyId = id
@@ -13,21 +26,24 @@ export const getShopifyId = (id) => {
   }
 
   if (!id.match(/^gid:\/\//)) {
-    // De-base64
-    shopifyId = atob(id)
+    // Decodes a id which has been encoded using Base64 encoding
+    shopifyId = window.atob(id)
   }
 
-  shopifyId = shopifyId.match(/\/([^/]+)$/)
+  // eslint-disable-next-line no-useless-escape
+  shopifyId = shopifyId.match(/\/([^\/]+)$/)
 
   return shopifyId ? shopifyId[1] : undefined
 }
 
 /**
- * Get the position of an element with respect to it's parent
+ * Get the position of an element with respect to it's parent.
+ * @param {(HTMLElement|undefined)} el
+ * @returns {number}
  */
 export const getElementPosition = (el) => {
   let child = el
-  let i = 0 // The first position will be `0`
+  let i = 0
 
   if (child) {
     child = el.previousElementSibling
@@ -41,8 +57,9 @@ export const getElementPosition = (el) => {
 }
 
 /**
- * Fire callback when in viewport. Not exposing a way to manually disconnect or
- * unobserve because it _should_ be garbage collected when el is removed.
+ * Fire callback once when in viewport.
+ * @param {HTMLElement} el
+ * @param {function} callback
  */
 export const whenFirstInViewport = (el, callback) => {
   const observer = new IntersectionObserver(([{ isIntersecting }]) => {
