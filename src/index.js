@@ -192,6 +192,23 @@ export default function ShopifyGAHelper({
   }
 
   /**
+   *
+   * @param {Array.<Object>} itemsPayload
+   * @returns
+   */
+  const viewItemList = (itemsPayload) => {
+    if (itemsPayload) {
+      return pushDataLayerEvent("view_item_list", {
+        ecommerce: {
+          items: [...itemsPayload],
+        },
+      })
+    }
+
+    return undefined
+  }
+
+  /**
    * Sends event of changes in the quantity of items in the cart.
    * @param {(Object.<string, (string|number)>|number|string)} variantPayload
    * @param {(number|string)} quantity
@@ -234,6 +251,7 @@ export default function ShopifyGAHelper({
   return {
     viewItem,
     selectItem,
+    viewItemList,
     addToCart,
     removeFromCart,
     viewCart,
