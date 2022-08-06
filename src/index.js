@@ -155,18 +155,6 @@ export default function ShopifyGAHelper({
     return pushEvent(variantPayload, { el, list, position })
   }
 
-  const viewCart = async (checkoutOrCartPayload) => {
-    if (checkoutOrCartPayload) {
-      return pushDataLayerEvent("view_cart", {
-        ecommerce: {
-          ...checkoutOrCartPayload,
-        },
-      })
-    }
-
-    return undefined
-  }
-
   const checkoutOrCart = (gtmEvent) => (checkoutOrCartPayload) => {
     if (checkoutOrCartPayload) {
       return pushDataLayerEvent(gtmEvent, {
@@ -177,6 +165,12 @@ export default function ShopifyGAHelper({
     }
 
     return undefined
+  }
+
+  const viewCart = async (checkoutOrCartPayload) => {
+    const pushEvent = checkoutOrCart("view_cart")
+
+    return pushEvent(checkoutOrCartPayload)
   }
 
   const beginCheckout = (checkoutOrCartPayload) => {
