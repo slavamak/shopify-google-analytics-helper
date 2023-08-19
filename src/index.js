@@ -86,7 +86,7 @@ export default function ShopifyGAHelper({
       productUrl,
       sku: variant.sku,
       price: variant.price.amount,
-      compareAtPrice: variant.compareAtPrice.amount,
+      compareAtPrice: variant.compareAtPrice && variant.compareAtPrice.amount,
       variantId,
       variantTitle: variant.title,
       variantImage: variantImage.originalSrc || variant.image,
