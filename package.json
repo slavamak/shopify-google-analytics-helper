@@ -1,10 +1,10 @@
 {
   "name": "shopify-google-analytics-helper",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "",
   "license": "MIT",
   "engines": {
-    "node" : ">=16.0.0"
+    "node": ">=16.0.0"
   },
   "repository": {
     "type": "git",
