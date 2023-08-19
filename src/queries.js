@@ -2,8 +2,8 @@ export const productVariantFragment = `fragment variant on ProductVariant {
 	id
 	sku
 	title
-	price
-	compareAtPrice
+	price { amount }
+	compareAtPrice { amount }
 	image { originalSrc }
 	product {
 		id

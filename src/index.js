@@ -85,8 +85,8 @@ export default function ShopifyGAHelper({
       productVendor: product.vendor,
       productUrl,
       sku: variant.sku,
-      price: variant.price,
-      compareAtPrice: variant.compareAtPrice,
+      price: variant.price.amount,
+      compareAtPrice: variant.compareAtPrice.amount,
       variantId,
       variantTitle: variant.title,
       variantImage: variantImage.originalSrc || variant.image,
@@ -114,7 +114,7 @@ export default function ShopifyGAHelper({
     item_brand: flatVariant.productVendor,
     item_category: flatVariant.productType,
     item_variant: flatVariant.variantTitle,
-    price: flatVariant.price,
+    price: flatVariant.price.amount,
   })
 
   const viewOrSelectItem =
